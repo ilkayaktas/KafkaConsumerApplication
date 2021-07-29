@@ -1,19 +1,63 @@
-plugins {
-    id 'java'
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.commercehub.gradle.plugin:gradle-avro-plugin:0.22.0"
+        classpath "com.github.jengelman.gradle.plugins:shadow:4.0.2"
+    }
 }
 
-group 'org.example'
-version '1.0-SNAPSHOT'
+plugins {
+    id "java"
+    id "com.google.cloud.tools.jib" version "2.8.0"
+    id "idea"
+    id "eclipse"
+}
+
+apply plugin: 'application'
+mainClassName = "KafkaConsumerApplication"
+
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
+
+    maven {
+        url "https://packages.confluent.io/maven"
+    }
 }
 
+apply plugin: "com.github.johnrengelman.shadow"
+
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    implementation "org.slf4j:slf4j-simple:1.7.30"
+    implementation "org.apache.kafka:kafka-streams:2.7.0"
+    testImplementation "junit:junit:4.13.2"
+    testImplementation 'org.hamcrest:hamcrest:2.2'
 }
 
 test {
-    useJUnitPlatform()
+    testLogging {
+        outputs.upToDateWhen { false }
+        showStandardStreams = true
+        exceptionFormat = "full"
+    }
+}
+
+
+jar {
+    manifest {
+        attributes(
+                "Main-Class": "main.KafkaConsumerApplication"
+        )
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
+shadowJar {
+    archiveBaseName = "kafka-consumer-application-standalone"
+    archiveClassifier = ''
 }
